@@ -1,0 +1,111 @@
+# Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: wso2sp-manager-2
+  labels:
+    app: wso2sp-manager
+    node: wso2sp-manager-2
+    pattern: wso2sp-pattern-distributed
+spec:
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wso2sp-manager
+        node: wso2sp-manager-2
+        pattern: wso2sp-pattern-distributed
+    spec:
+      nodeSelector:
+        nodename: node2
+      securityContext:
+        runAsUser: 802
+      containers:
+      - image: gcr.io/wso2-sp-distributed-248117/wso2sp-compat-threshold-15mins-manager@sha256:16f54cbb0a9c0de2f42049e31edd85e0d336150f666138fbc30a6d15919ccdf7
+        name: wso2sp-manager-2
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: "2Gi"
+          requests:
+            memory: "2Gi"
+        command: ['sh', '-c', sleep 40 && /home/wso2carbon/init.sh]
+        env:
+        -
+          name: WSO2_SERVER_PROFILE
+          value: "manager"
+        -
+          name: OFFSET
+          value: "1"
+        -
+          name: NODE_ID
+          value: "wso2sp-manager-2"
+        -
+          name: NODE_PORT
+          value: "9544"
+        -
+          name: NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+
+        ports:
+        -
+          containerPort: 9090
+          protocol: "TCP"
+        -
+          containerPort: 9544
+          protocol: "TCP"
+        -
+          containerPort: 9711
+          protocol: "TCP"
+        -
+          containerPort: 9611
+          protocol: "TCP"
+        -
+          containerPort: 7711
+          protocol: "TCP"
+        -
+          containerPort: 7611
+          protocol: "TCP"
+
+        volumeMounts:
+        - name: sp-manager-conf
+          mountPath: "/home/wso2carbon/wso2-config-volume/conf/manager/"
+        - name: sp-manager-bin
+          mountPath: "/home/wso2carbon/kubernetes-volumes/manager/bin/"
+        - name: sp-mgt-storage-volume
+          mountPath: "/home/wso2carbon/wso2sp-4.3.0/deployment/siddhi-files/"
+        livenessProbe:
+          tcpSocket:
+            port: 9544
+          initialDelaySeconds: 300
+          periodSeconds: 20
+      imagePullSecrets:
+      - name: wso2creds
+      volumes:
+      - name: sp-manager-conf
+        configMap:
+          name: sp-manager-conf
+      - name: sp-manager-bin
+        configMap:
+          name: sp-manager-bin
+          defaultMode: 0755
+      - name: sp-mgt-storage-volume
+        #persistentVolumeClaim:
+          #claimName: sp-mgt-volume-claim
+      serviceAccountName: "wso2svcacct"
