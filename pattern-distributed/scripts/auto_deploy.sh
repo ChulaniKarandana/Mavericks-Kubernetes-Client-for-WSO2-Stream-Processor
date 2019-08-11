@@ -1,6 +1,8 @@
 #!/bin/bash
 
-NUM=6
+args=( "$@" ) 
+
+NUM=${args[0]}
 
 if [ $NUM -eq 1 ];then 
 	echo Hey number of workers 1.

@@ -76,6 +76,21 @@ TEST="curl -k -X GET https://10.11.254.240:32390/siddhi-apps?isActive=true  -H a
 
 
 
+#for iter in {6..21..5}; do 
+#    echo ${nodes_list[$iter]}
+#    SUB=$(echo ${nodes_list[0]}| cut -d' ' -f $iter)
+#    echo $SUB;
+#    nodes+=($SUB)
+#    echo "---------------"
+#    echo $nodes
+#done
+
+
+#mxxxx=20
+#workers_list=( wso2sp-worker-2 wso2sp-worker-4 )
+
+
+#curl -k -X GET https://35.237.74.71:30137/siddhi-apps?isActive=true  -H accept:application/json -u admin:admin -k
 
 
 

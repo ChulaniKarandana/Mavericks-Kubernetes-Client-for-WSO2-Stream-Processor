@@ -172,5 +172,15 @@ kubectl create -f ../ingresses/wso2sp-manager-2-ingress.yaml
 kubectl create -f ../ingresses/wso2sp-dashboard-ingress.yaml
 sleep 20s
 
+
+kubectl expose deployment wso2sp-worker-1 --type=NodePort --name=wso2sp-worker-1-service-1
+
+
+kubectl expose deployment wso2sp-worker-2 --type=NodePort --name=wso2sp-worker-2-service-1
+
+
+kubectl expose deployment wso2sp-worker-4 --type=NodePort --name=wso2sp-worker-4-service-1
+
+
 echo 'Finished'
 
