@@ -1,24 +1,46 @@
 #!/bin/bash
 CT="Content-Type:application/json"
 
+workers_list=()
+#get inputs from args
+# store arguments in a special array 
+args=( "$@" ) 
+# get number of elements 
+ELEMENTS=${#args[@]} 
+ 
+# echo each element in array  
+nodes_number=${args[0]}
+
+partial_siddhi_apps_number=${args[1]}
+
+# for loop 
+for (( i=2;i<$ELEMENTS;i++)); do 
+    workers_list+=(${args[${i}]})
+    echo ${args[${i}]} 
+done
+
+
+
 #takes the ip list using
-nodes_number=4
-max_num=$(($nodes_number * 5))
-mxxxx=20
-workers_list=( wso2sp-worker-2 wso2sp-worker-4 )
+#nodes_number=4
+max_num=$(($nodes_number * 5 + 1))
+echo $max_num
+
 should_undeploy=()
 nodes_list_raw=$( kubectl get nodes )
 nodes_list=${nodes_list_raw[0]}
 echo $nodes_list;
 
 nodes=()
-for iter in {6..21..5}; do 
+
+for ((iter=6; iter<=$max_num; iter=iter+5)) do
     echo ${nodes_list[$iter]}
     SUB=$(echo ${nodes_list[0]}| cut -d' ' -f $iter)
     echo $SUB;
     nodes+=($SUB)
-    echo "---------------"
-    echo $nodes
+    echo "<<<<<<<<<<<<<<<"
+    echo ${nodes[$iter]}
+    echo ">>>>>>>>>>>>>>>"
 done
 
 echo ${nodes[2]}
@@ -29,13 +51,13 @@ echo $ip_list
 
 SERVICE="-service-1"
 
-#curl -k -X GET https://35.237.74.71:30137/siddhi-apps?isActive=true  -H accept:application/json -u admin:admin -k
+no_of_partial_siddhi_apps=0
 
 for u in "${workers_list[@]}"  
 do  
     MY_SERVICE="$u$SERVICE"
     echo $MY_SERVICE;
-    kubectl expose deployment $u --type=NodePort --name=$MY_SERVICE
+    #kubectl expose deployment $u --type=NodePort --name=$MY_SERVICE
     NODEPORT=$(kubectl get -o jsonpath="{.spec.ports[0].nodePort}" services $u)
     echo $NODEPORT;
     #$RULE=$u
@@ -75,11 +97,34 @@ do
     else
       echo "There are no Partial Siddhi Apps in the worker $u";
       should_undeploy+=($u)
-      
+      #kubectl delete -l mylabel=$u
     fi
+
+    my_string=$RESPONSE
+    my_string="${my_string:1}"
+    my_string="${my_string::-1}"  
+    #echo $my_string
+
+    my_array=($(echo $my_string | tr "," "\n"))
+
+    #Print the split string
+    for i in "${my_array[@]}"
+    do
+       echo $i
+       no_of_partial_siddhi_apps=$((no_of_partial_siddhi_apps+1))
+    done
     gcloud compute firewall-rules delete rule-1
 done  
 echo "The workers that needed to be undeployed.............."
 echo "${should_undeploy[*]}"
 
-
+if [[ "$partial_siddhi_apps_number" = "$no_of_partial_siddhi_apps" ]];
+then
+    for w in "${should_undeploy[@]}"  
+    do
+        kubectl delete deployment -l app=$w
+        kubectl delete pod -l app=$w
+    done
+else
+    echo "Siddhi app deployment is not yet completed...Try Again Later";
+fi
